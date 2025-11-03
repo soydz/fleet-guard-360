@@ -1,18 +1,22 @@
-# --- Etapa de Construcción (Builder) ---
-FROM gradle:8.7-jdk21-focal AS builder
+# Builder
+FROM gradle:9.1.0-jdk21 AS builder
 WORKDIR /app
-COPY build.gradle.kts settings.gradle.kts gradlew ./
+
+COPY build.gradle gradlew ./
 COPY gradle ./gradle
+
 RUN ./gradlew dependencies
+
 COPY src ./src
+
+# Construir el jar
 RUN ./gradlew build --no-daemon -x test
 
-# --- Etapa Final (Runtime) ---
-FROM openjdk:21-slim
+# Runtime
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
-
-# Se ha eliminado la línea "EXPOSE 8080"
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# Ejecucción
 ENTRYPOINT ["java", "-jar", "app.jar"]
