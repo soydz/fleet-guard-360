@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Map, Bell, BookOpen, User, Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Sidebar } from "@/components/Sidebar";
+import { useGraphQL } from "@/hooks/use-graphql";
 
 interface Alert {
   id: string;
@@ -26,10 +27,18 @@ interface PriorityLevel {
   nombre: string;
 }
 
-const API_URL = "/api";
+interface TipoAlertaResponse {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  nivelPrioridad: {
+    id: number;
+    nombre: string;
+  };
+  tipoEncargado: string;
+}
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [priorities, setPriorities] = useState<PriorityLevel[]>([]);
   const [newAlert, setNewAlert] = useState({
@@ -42,16 +51,11 @@ const Dashboard = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { fetchGraphQL } = useGraphQL();
 
   useEffect(() => {
     const fetchPriorities = async () => {
       try {
-        const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-        if (!token) {
-          navigate("/");
-          return;
-        }
-
         const query = `
           query GetAllNivelesPrioridad {
             nivelesPrioridad {
@@ -61,26 +65,12 @@ const Dashboard = () => {
           }
         `;
 
-        const response = await fetch(`${API_URL}/alerts/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ query }),
-        });
+        const result = await fetchGraphQL<{ nivelesPrioridad: PriorityLevel[] }>(
+          "/alerts/graphql",
+          query
+        );
 
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem("jwt_token");
-          sessionStorage.removeItem("jwt_token");
-          navigate("/", { state: { sessionExpired: true } });
-          return;
-        }
-
-        const result = await response.json();
-        if (result.data?.nivelesPrioridad) {
-          setPriorities(result.data.nivelesPrioridad);
-        }
+        setPriorities(result.nivelesPrioridad);
       } catch (error) {
         console.error("Error fetching priorities:", error);
       }
@@ -88,12 +78,6 @@ const Dashboard = () => {
 
     const fetchAlerts = async () => {
       try {
-        const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-        if (!token) {
-          navigate("/");
-          return;
-        }
-
         const query = `
           query GetAllTipoAlertas {
             tipoAlertas {
@@ -109,35 +93,20 @@ const Dashboard = () => {
           }
         `;
 
-        const response = await fetch(`${API_URL}/alerts/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ query }),
-        });
+        const result = await fetchGraphQL<{ tipoAlertas: TipoAlertaResponse[] }>(
+          "/alerts/graphql",
+          query
+        );
 
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem("jwt_token");
-          sessionStorage.removeItem("jwt_token");
-          navigate("/", { state: { sessionExpired: true } });
-          return;
-        }
-
-        const result = await response.json();
-        if (result.data?.tipoAlertas) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mappedAlerts = result.data.tipoAlertas.map((item: any) => ({
-            id: item.id.toString(),
-            name: item.nombre,
-            description: item.descripcion,
-            priority: item.nivelPrioridad.nombre, // Usamos el nombre directamente
-            priorityId: item.nivelPrioridad.id,
-            area: item.tipoEncargado,
-          }));
-          setAlerts(mappedAlerts);
-        }
+        const mappedAlerts = result.tipoAlertas.map((item) => ({
+          id: item.id.toString(),
+          name: item.nombre,
+          description: item.descripcion,
+          priority: item.nivelPrioridad.nombre,
+          priorityId: item.nivelPrioridad.id,
+          area: item.tipoEncargado,
+        }));
+        setAlerts(mappedAlerts);
       } catch (error) {
         console.error("Error fetching alerts:", error);
         toast({
@@ -150,7 +119,8 @@ const Dashboard = () => {
 
     fetchPriorities();
     fetchAlerts();
-  }, [navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getPriorityId = (priority: string): number => {
     // Si la prioridad es un número (ID), devolverlo
@@ -176,18 +146,6 @@ const Dashboard = () => {
     }
 
     try {
-      const token =
-        localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-
-      if (!token) {
-        toast({
-          title: "Error",
-          description: "No se encontró el token de autenticación. Inicia sesión nuevamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       let mutation;
       let variables;
 
@@ -240,29 +198,13 @@ const Dashboard = () => {
         };
       }
 
-      const response = await fetch(`${API_URL}/alerts/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ query: mutation, variables }),
-      });
+      const result = await fetchGraphQL<{ updateTipoAlerta?: TipoAlertaResponse; createTipoAlerta?: TipoAlertaResponse }>(
+        "/alerts/graphql",
+        mutation,
+        variables
+      );
 
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem("jwt_token");
-        sessionStorage.removeItem("jwt_token");
-        navigate("/", { state: { sessionExpired: true } });
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.errors) {
-        throw new Error(result.errors[0]?.message || "Error al guardar la alerta");
-      }
-
-      const saved = editingId ? result.data.updateTipoAlerta : result.data.createTipoAlerta;
+      const saved = editingId ? result.updateTipoAlerta : result.createTipoAlerta;
 
       const alert: Alert = {
         id: saved.id.toString(),
@@ -318,40 +260,19 @@ const Dashboard = () => {
 
   const handleDeleteAlert = async (id: string) => {
     try {
-      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
-
       const mutation = `
         mutation DeleteTipoAlerta($id: Int!) {
           deleteTipoAlerta(id: $id)
         }
       `;
 
-      const response = await fetch(`${API_URL}/alerts/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ query: mutation, variables: { id: parseInt(id) } }),
-      });
+      const result = await fetchGraphQL<{ deleteTipoAlerta: boolean }>(
+        "/alerts/graphql",
+        mutation,
+        { id: parseInt(id) }
+      );
 
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem("jwt_token");
-        sessionStorage.removeItem("jwt_token");
-        navigate("/", { state: { sessionExpired: true } });
-        return;
-      }
-
-      const result = await response.json();
-      if (result.errors) {
-        throw new Error(result.errors[0]?.message || "Error al eliminar la alerta");
-      }
-
-      if (result.data.deleteTipoAlerta) {
+      if (result.deleteTipoAlerta) {
         setAlerts(alerts.filter((alert) => alert.id !== id));
         toast({
           title: "Alerta eliminada",
@@ -383,54 +304,13 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex w-full bg-background">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-screen w-[92px] bg-[#0A2846] flex flex-col items-center pt-5 z-10">
-        <div className="flex flex-col space-y-[15px] items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-          >
-            <Map className="h-[28px] w-[28px]" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-            asChild
-          >
-            <Link to="/dashboard">
-              <Bell className="h-[28px] w-[28px]" />
-            </Link>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-            asChild
-          >
-            <Link to="/panel-de-alertas">
-              <BookOpen className="h-[28px] w-[28px]" />
-            </Link>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-          >
-            <User className="h-[28px] w-[28px]" />
-          </Button>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Contenido Principal */}
-      <main className="ml-[92px] flex-1 p-6">
+      <main className="ml-[240px] flex-1 p-6">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold text-foreground">Alertas Activas</h1>
+              <h1 className="text-3xl font-bold text-foreground">Configuraciones de Alertas</h1>
             </div>
             
             <AlertDialog open={isDialogOpen} onOpenChange={(open) => {

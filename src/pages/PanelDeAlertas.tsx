@@ -1,195 +1,164 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-import { Map, Bell, BookOpen, User, Search, RefreshCw, Bus } from "lucide-react";
+import { Search, RefreshCw, History as HistoryIcon } from "lucide-react";
+import { Sidebar } from "@/components/Sidebar";
+import { useGraphQL } from "@/hooks/use-graphql";
 import { useToast } from "@/hooks/use-toast";
+
+interface AlertResponse {
+  id: string;
+  alertType: string;
+  responsible: string;
+  priority: string;
+  driver: string;
+  generatingUnit: string;
+  state: string;
+  generationDate: string;
+}
 
 interface Alert {
   id: string;
   tipo: string;
   responsable: string;
-  prioridad: "Alta" | "Media" | "Baja";
+  prioridad: string;
   unidad: string;
   conductor: string;
   generado: string;
-  estado: "En espera" | "En proceso" | "Resuelto";
+  estado: string;
 }
 
 const PanelDeAlertas = () => {
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: "1",
-      tipo: "Exceso de velocidad",
-      responsable: "Área de monitoreo",
-      prioridad: "Alta",
-      unidad: "Camión-123",
-      conductor: "Ana Gómez",
-      generado: "2024-05-23 10:00",
-      estado: "En espera"
-    },
-    {
-      id: "2",
-      tipo: "Frenado brusco",
-      responsable: "Mantenimiento",
-      prioridad: "Media",
-      unidad: "Furgoneta-456",
-      conductor: "Carlos Sanchez",
-      generado: "2024-05-23 09:45",
-      estado: "En proceso"
-    },
-    {
-      id: "3",
-      tipo: "Entrada a geocerca",
-      responsable: "Logística",
-      prioridad: "Baja",
-      unidad: "Coche-789",
-      conductor: "Laura Fernandez",
-      generado: "2024-05-23 09:30",
-      estado: "Resuelto"
-    },
-    {
-      id: "4",
-      tipo: "Motor apagado",
-      responsable: "Taller mecánico",
-      prioridad: "Media",
-      unidad: "Autobús-101",
-      conductor: "David Lopez",
-      generado: "2024-05-23 09:15",
-      estado: "En espera"
-    },
-    {
-      id: "5",
-      tipo: "Batería baja",
-      responsable: "Mantenimiento",
-      prioridad: "Alta",
-      unidad: "Camión-234",
-      conductor: "Sara Moreno",
-      generado: "2024-05-23 09:00",
-      estado: "En proceso"
-    }
-  ]);
-
-  const [newAlert, setNewAlert] = useState({
-    tipo: "",
-    responsable: "",
-    prioridad: "",
-    unidad: "",
-    conductor: "",
-    estado: ""
-  });
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { fetchGraphQL } = useGraphQL();
   const { toast } = useToast();
 
-  const handleAddAlert = () => {
-    if (!newAlert.tipo || !newAlert.responsable || !newAlert.prioridad || !newAlert.unidad || !newAlert.conductor || !newAlert.estado) {
+  useEffect(() => {
+    fetchAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      setIsLoading(true);
+      const query = `
+        query GetAllAlerts {
+          getAllAlerts {
+            id
+            alertType
+            responsible
+            priority
+            driver
+            generatingUnit
+            state
+            generationDate
+          }
+        }
+      `;
+
+      const result = await fetchGraphQL<{ getAllAlerts: AlertResponse[] }>(
+        "/panel/graphql",
+        query
+      );
+
+      const transformedAlerts: Alert[] = result.getAllAlerts.map((alert) => ({
+        id: alert.id,
+        tipo: alert.alertType,
+        responsable: alert.responsible,
+        prioridad: alert.priority,
+        unidad: alert.generatingUnit,
+        conductor: alert.driver,
+        generado: alert.generationDate,
+        estado: alert.state,
+      }));
+
+      console.log("Alertas recibidas del backend:", transformedAlerts);
+      console.log("Estados únicos:", [...new Set(transformedAlerts.map(a => a.estado))]);
+      console.log("Prioridades únicas:", [...new Set(transformedAlerts.map(a => a.prioridad))]);
+      
+      setAlerts(transformedAlerts);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
       toast({
         title: "Error",
-        description: "Por favor completa todos los campos",
-        variant: "destructive"
+        description: "No se pudieron cargar las alertas del historial",
+        variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    const alert: Alert = {
-      id: Date.now().toString(),
-      tipo: newAlert.tipo,
-      responsable: newAlert.responsable,
-      prioridad: newAlert.prioridad as "Alta" | "Media" | "Baja",
-      unidad: newAlert.unidad,
-      conductor: newAlert.conductor,
-      generado: new Date().toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-      estado: newAlert.estado as "En espera" | "En proceso" | "Resuelto"
-    };
-
-    setAlerts([...alerts, alert]);
-    setNewAlert({ tipo: "", responsable: "", prioridad: "", unidad: "", conductor: "", estado: "" });
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Alerta agregada",
-      description: "La nueva alerta ha sido creada exitosamente"
-    });
   };
 
+
+
   const getPriorityColor = (prioridad: string) => {
-    switch (prioridad) {
-      case "Alta": return "bg-[#FF6B6B] text-white";
-      case "Media": return "bg-[#FFD93D] text-black";
-      case "Baja": return "bg-[#00D084] text-white";
-      default: return "bg-muted";
+    const prioridadLower = prioridad.toLowerCase().trim();
+    if (prioridadLower.includes("alta") || prioridadLower === "high") {
+      return "bg-red-600 text-white font-semibold";
+    }
+    if (prioridadLower.includes("media") || prioridadLower === "medium") {
+      return "bg-yellow-500 text-gray-900 font-semibold";
+    }
+    if (prioridadLower.includes("baja") || prioridadLower === "low") {
+      return "bg-green-600 text-white font-semibold";
+    }
+    return "bg-gray-500 text-white";
+  };
+
+  const formatDate = (isoDate: string) => {
+    try {
+      const date = new Date(isoDate);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error("Error formateando fecha:", error);
+      return isoDate;
     }
   };
 
   const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case "En espera": return "bg-[#FFD93D] text-black";
-      case "En proceso": return "bg-[#2B6CB0] text-white";
-      case "Resuelto": return "bg-[#00D084] text-white";
-      default: return "bg-muted";
+    const estadoLower = estado.toLowerCase().trim();
+    
+    // Debug: log del estado recibido
+    console.log(`Estado recibido: "${estado}" -> normalizado: "${estadoLower}"`);
+    
+    if (estadoLower.includes("espera") || estadoLower === "pending" || estadoLower === "en espera") {
+      return "bg-yellow-500 text-gray-900 font-semibold";
     }
+    if (estadoLower.includes("proceso") || estadoLower === "in progress" || estadoLower === "en proceso") {
+      return "bg-blue-600 text-white font-semibold";
+    }
+    if (estadoLower.includes("resuelto") || estadoLower === "resolved") {
+      return "bg-green-600 text-white font-semibold";
+    }
+    
+    // Si no coincide con ninguno, log de advertencia
+    console.warn(`Estado no reconocido: "${estado}"`);
+    return "bg-gray-500 text-white";
   };
 
   return (
     <div className="min-h-screen flex w-full bg-[#0E1525]">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-screen w-[92px] bg-[#0A2846] flex flex-col items-center pt-5 z-10">
-        <div className="flex flex-col space-y-[15px] items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-          >
-            <Map className="h-[28px] w-[28px]" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-            asChild
-          >
-            <Link to="/dashboard">
-              <Bell className="h-[28px] w-[28px]" />
-            </Link>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-            asChild
-          >
-            <Link to="/panel-de-alertas">
-              <BookOpen className="h-[28px] w-[28px]" />
-            </Link>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 w-[28px] h-[28px] p-0"
-          >
-            <User className="h-[28px] w-[28px]" />
-          </Button>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Contenido Principal */}
-      <main className="ml-[92px] flex-1 p-6">
+      <main className="ml-[240px] flex-1 p-6">
         {/* Encabezado */}
         <div className="bg-[#0A2846] rounded-lg px-6 py-4 mb-6 flex items-center gap-3">
-          <Bus className="h-8 w-8 text-[#3B82F6]" />
-          <h1 className="text-2xl font-semibold text-white tracking-wide uppercase">
-            PANEL DE ALERTAS
+          <HistoryIcon className="h-8 w-8 text-[#3B82F6]" />
+          <h1 className="text-2xl font-semibold text-white tracking-wide ">
+            Historial de Alertas
           </h1>
         </div>
 
@@ -273,121 +242,6 @@ const PanelDeAlertas = () => {
 
               <div className="flex-1" />
 
-              {/* Botón Crear Alerta */}
-              <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium px-6">
-                    Crear Alerta
-                  </Button>
-                </AlertDialogTrigger>
-                
-                <AlertDialogContent className="max-w-md bg-[#141C2F] border-gray-700 text-[#E5E7EB]">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">Agregar Nueva Alerta</AlertDialogTitle>
-                  </AlertDialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="alert-tipo" className="text-[#E5E7EB]">Tipo de Alerta</Label>
-                      <Input
-                        id="alert-tipo"
-                        placeholder="Ej: Exceso de velocidad"
-                        value={newAlert.tipo}
-                        onChange={(e) => setNewAlert({ ...newAlert, tipo: e.target.value })}
-                        className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-[#E5E7EB]">Responsable</Label>
-                      <Select 
-                        value={newAlert.responsable} 
-                        onValueChange={(value) => setNewAlert({ ...newAlert, responsable: value })}
-                      >
-                        <SelectTrigger className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]">
-                          <SelectValue placeholder="Selecciona responsable" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#141C2F] border-gray-700">
-                          <SelectItem value="Área de monitoreo">Área de monitoreo</SelectItem>
-                          <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                          <SelectItem value="Logística">Logística</SelectItem>
-                          <SelectItem value="Taller mecánico">Taller mecánico</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-[#E5E7EB]">Prioridad</Label>
-                      <Select 
-                        value={newAlert.prioridad} 
-                        onValueChange={(value) => setNewAlert({ ...newAlert, prioridad: value })}
-                      >
-                        <SelectTrigger className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]">
-                          <SelectValue placeholder="Selecciona prioridad" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#141C2F] border-gray-700">
-                          <SelectItem value="Alta">Alta</SelectItem>
-                          <SelectItem value="Media">Media</SelectItem>
-                          <SelectItem value="Baja">Baja</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="alert-unidad" className="text-[#E5E7EB]">Unidad</Label>
-                      <Input
-                        id="alert-unidad"
-                        placeholder="Ej: Camión-123"
-                        value={newAlert.unidad}
-                        onChange={(e) => setNewAlert({ ...newAlert, unidad: e.target.value })}
-                        className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="alert-conductor" className="text-[#E5E7EB]">Conductor</Label>
-                      <Input
-                        id="alert-conductor"
-                        placeholder="Ej: Juan Pérez"
-                        value={newAlert.conductor}
-                        onChange={(e) => setNewAlert({ ...newAlert, conductor: e.target.value })}
-                        className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-[#E5E7EB]">Estado</Label>
-                      <Select 
-                        value={newAlert.estado} 
-                        onValueChange={(value) => setNewAlert({ ...newAlert, estado: value })}
-                      >
-                        <SelectTrigger className="mt-2 bg-[#0E1525] border-gray-700 text-[#E5E7EB]">
-                          <SelectValue placeholder="Selecciona estado" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#141C2F] border-gray-700">
-                          <SelectItem value="En espera">En espera</SelectItem>
-                          <SelectItem value="En proceso">En proceso</SelectItem>
-                          <SelectItem value="Resuelto">Resuelto</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex space-x-2 pt-4">
-                      <Button onClick={handleAddAlert} className="flex-1 bg-[#3B82F6] hover:bg-[#2563EB]">
-                        Agregar Alerta
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsDialogOpen(false)}
-                        className="flex-1 border-gray-700 text-[#E5E7EB] hover:bg-[#0E1525]"
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                </AlertDialogContent>
-              </AlertDialog>
-
               {/* Búsqueda y Recarga */}
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -397,8 +251,14 @@ const PanelDeAlertas = () => {
                     className="pl-10 w-[200px] bg-[#0E1525] border-gray-700 text-[#E5E7EB]"
                   />
                 </div>
-                <Button variant="ghost" size="icon" className="text-[#E5E7EB] hover:bg-[#0E1525]">
-                  <RefreshCw className="h-5 w-5" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-[#E5E7EB] hover:bg-[#0E1525]"
+                  onClick={fetchAlerts}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
             </div>
@@ -418,42 +278,50 @@ const PanelDeAlertas = () => {
                   <TableHead className="font-semibold text-[#E5E7EB]">Conductor</TableHead>
                   <TableHead className="font-semibold text-[#E5E7EB]">Generado</TableHead>
                   <TableHead className="font-semibold text-[#E5E7EB]">Estado</TableHead>
-                  <TableHead className="font-semibold text-[#E5E7EB]">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {alerts.map((alert, index) => (
-                  <TableRow 
-                    key={alert.id} 
-                    className={`border-gray-700 ${
-                      index % 2 === 0 ? "bg-[#131A2C]" : "bg-[#101725]"
-                    }`}
-                  >
-                    <TableCell className="text-[#E5E7EB]">{alert.tipo}</TableCell>
-                    <TableCell className="text-[#E5E7EB]">{alert.responsable}</TableCell>
-                    <TableCell>
-                      <Badge className={`${getPriorityColor(alert.prioridad)} rounded-full px-3 py-1 text-xs font-medium`}>
-                        {alert.prioridad}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[#E5E7EB]">{alert.unidad}</TableCell>
-                    <TableCell className="text-[#E5E7EB]">{alert.conductor}</TableCell>
-                    <TableCell className="text-[#E5E7EB] text-sm">{alert.generado}</TableCell>
-                    <TableCell>
-                      <Badge className={`${getEstadoColor(alert.estado)} rounded-full px-3 py-1 text-xs font-medium`}>
-                        {alert.estado}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button 
-                        size="sm" 
-                        className="bg-transparent text-[#2B2BD9] hover:bg-[#2B2BD9]/10 font-medium px-4"
-                      >
-                        Editar
-                      </Button>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-[#E5E7EB] py-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="h-5 w-5 animate-spin" />
+                        <span>Cargando historial de alertas...</span>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : alerts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-[#E5E7EB] py-8">
+                      No hay alertas en el historial
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  alerts.map((alert, index) => (
+                    <TableRow 
+                      key={alert.id} 
+                      className={`border-gray-700 ${
+                        index % 2 === 0 ? "bg-[#131A2C]" : "bg-[#101725]"
+                      }`}
+                    >
+                      <TableCell className="text-[#E5E7EB]">{alert.tipo}</TableCell>
+                      <TableCell className="text-[#E5E7EB]">{alert.responsable}</TableCell>
+                      <TableCell>
+                        <Badge className={`${getPriorityColor(alert.prioridad)} rounded-full px-4 py-1.5 text-sm`}>
+                          {alert.prioridad}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[#E5E7EB]">{alert.unidad}</TableCell>
+                      <TableCell className="text-[#E5E7EB]">{alert.conductor}</TableCell>
+                      <TableCell className="text-[#E5E7EB] text-sm">{formatDate(alert.generado)}</TableCell>
+                      <TableCell>
+                        <Badge className={`${getEstadoColor(alert.estado)} rounded-full px-4 py-1.5 text-sm`}>
+                          {alert.estado}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
