@@ -12,7 +12,7 @@ const API_URL = "/api";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: "",
     remember: false,
   });
@@ -31,7 +31,7 @@ const Login = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: credentials.username, // el backend espera 'email'
+          email: credentials.email,
           password: credentials.password,
         }),
       });
@@ -114,18 +114,18 @@ const Login = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="username" className="font-medium">
-                  Usuario o Correo
+                <Label htmlFor="email" className="font-medium">
+                  Correo Electrónico
                 </Label>
                 <Input
-                  id="username"
-                  type="text"
-                  value={credentials.username}
+                  id="email"
+                  type="email"
+                  value={credentials.email}
                   onChange={(e) =>
-                    setCredentials({ ...credentials, username: e.target.value })
+                    setCredentials({ ...credentials, email: e.target.value })
                   }
                   className="mt-2 h-12"
-                  placeholder="Ingresa tu usuario o correo"
+                  placeholder="Ingresa tu correo electrónico"
                 />
               </div>
 

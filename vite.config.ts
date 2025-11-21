@@ -8,6 +8,18 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api": {
+        target: "http://fleetguard-api.ddns.net",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+        configure: (proxy, _options) => {
+          proxy.on("proxyReq", (proxyReq, _req, _res) => {
+            proxyReq.setHeader("Origin", "http://fleetguard-api.ddns.net");
+          });
+        },
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

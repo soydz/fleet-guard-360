@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://143.110.196.155/:path*"
+      "destination": "http://fleetguard-api.ddns.net/:path*"
     }
   ]
 }

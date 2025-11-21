@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Map, Bell, BookOpen, User, Edit, Trash2, Plus } from "lucide-react";
@@ -15,27 +16,72 @@ interface Alert {
   id: string;
   name: string;
   description: string;
-  priority: "critical" | "high" | "medium";
+  priority: string;
   area: string;
-  conductor: string;
+}
+
+interface PriorityLevel {
+  id: number;
+  nombre: string;
 }
 
 const API_URL = "/api";
 
 const Dashboard = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [priorities, setPriorities] = useState<PriorityLevel[]>([]);
   const [newAlert, setNewAlert] = useState({
     name: "",
     description: "",
     priority: "",
     area: "",
-    conductor: "",
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const fetchPriorities = async () => {
+      try {
+        const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+        if (!token) return;
+
+        const query = `
+          query GetAllNivelesPrioridad {
+            nivelesPrioridad {
+              id
+              nombre
+            }
+          }
+        `;
+
+        const response = await fetch(`${API_URL}/alerts/graphql`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        const result = await response.json();
+        if (result.data?.nivelesPrioridad) {
+          setPriorities(result.data.nivelesPrioridad);
+        }
+      } catch (error) {
+        console.error("Error fetching priorities:", error);
+      }
+    };
+
+    fetchPriorities();
+  }, []);
+
   const getPriorityId = (priority: string): number => {
+    // Si la prioridad es un número (ID), devolverlo
+    const id = parseInt(priority);
+    if (!isNaN(id)) return id;
+    
+    // Fallback para compatibilidad
     switch (priority) {
       case "critical": return 1;
       case "high": return 5;
@@ -43,21 +89,6 @@ const Dashboard = () => {
       default: return 7;
     }
   };
-  
-const mapAreaToEncargado = (area: string): string => {
-  switch (area) {
-    case "zona-norte":
-      return "MECANICO";
-    case "zona-sur":
-      return "SEGURIDAD";
-    case "zona-centro":
-      return "OPERADOR_LOGISTICA";
-    case "taller-central":
-      return "SOPORTE_TECNICO";
-    default:
-      return "OPERADOR_LOGISTICA"; // valor por defecto válido
-  }
-};
 
 const handleAddAlert = async () => {
   if (!newAlert.name || !newAlert.description || !newAlert.priority || !newAlert.area) {
@@ -102,7 +133,7 @@ const handleAddAlert = async () => {
         nombre: newAlert.name,
         descripcion: newAlert.description,
         nivelPrioridadId: getPriorityId(newAlert.priority),
-        tipoEncargado: mapAreaToEncargado(newAlert.area),
+        tipoEncargado: newAlert.area,
       },
     };
 
@@ -134,11 +165,10 @@ const handleAddAlert = async () => {
           ? "high"
           : "medium",
       area: created.tipoEncargado,
-      conductor: "No Asignado",
     };
 
     setAlerts((prev) => [...prev, alert]);
-    setNewAlert({ name: "", description: "", priority: "", area: "", conductor: "" });
+    setNewAlert({ name: "", description: "", priority: "", area: "" });
     setIsDialogOpen(false);
 
     toast({
@@ -254,7 +284,7 @@ const handleAddAlert = async () => {
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="alert-name">Nombre de la Alerta</Label>
-                    <Textarea
+                    <Input
                       id="alert-name"
                       placeholder="Ingresa el nombre de la alerta"
                       value={newAlert.name}
@@ -284,28 +314,10 @@ const handleAddAlert = async () => {
                         <SelectValue placeholder="Selecciona un área" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="zona-norte">Zona Norte</SelectItem>
-                        <SelectItem value="zona-sur">Zona Sur</SelectItem>
-                        <SelectItem value="zona-centro">Zona Centro</SelectItem>
-                        <SelectItem value="taller-central">Taller Central</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label>Seleccionar Conductor</Label>
-                    <Select 
-                      value={newAlert.conductor} 
-                      onValueChange={(value) => setNewAlert({ ...newAlert, conductor: value })}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Selecciona un conductor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="juan-perez">Juan Pérez</SelectItem>
-                        <SelectItem value="maria-gonzalez">María González</SelectItem>
-                        <SelectItem value="carlos-rodriguez">Carlos Rodríguez</SelectItem>
-                        <SelectItem value="ana-martinez">Ana Martínez</SelectItem>
+                        <SelectItem value="MECANICO">Mecánico</SelectItem>
+                        <SelectItem value="SEGURIDAD">Seguridad</SelectItem>
+                        <SelectItem value="OPERADOR_LOGISTICA">Operador Logística</SelectItem>
+                        <SelectItem value="SOPORTE_TECNICO">Soporte Técnico</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -320,9 +332,11 @@ const handleAddAlert = async () => {
                         <SelectValue placeholder="Selecciona una prioridad" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="critical">Crítica</SelectItem>
-                        <SelectItem value="high">Alta</SelectItem>
-                        <SelectItem value="medium">Media</SelectItem>
+                        {priorities.map((priority) => (
+                          <SelectItem key={priority.id} value={priority.id.toString()}>
+                            {priority.nombre}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -354,7 +368,6 @@ const handleAddAlert = async () => {
                     <TableHead className="font-bold text-foreground">Descripción</TableHead>
                     <TableHead className="font-bold text-foreground">Prioridad</TableHead>
                     <TableHead className="font-bold text-foreground">Área Encargada</TableHead>
-                    <TableHead className="font-bold text-foreground">Conductor</TableHead>
                     <TableHead className="font-bold text-foreground">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -372,7 +385,6 @@ const handleAddAlert = async () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{alert.area}</TableCell>
-                      <TableCell>{alert.conductor}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10">
