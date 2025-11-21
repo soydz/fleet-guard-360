@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ interface Alert {
   name: string;
   description: string;
   priority: string;
+  priorityId: number;
   area: string;
 }
 
@@ -28,6 +29,7 @@ interface PriorityLevel {
 const API_URL = "/api";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [priorities, setPriorities] = useState<PriorityLevel[]>([]);
   const [newAlert, setNewAlert] = useState({
@@ -36,6 +38,7 @@ const Dashboard = () => {
     priority: "",
     area: "",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -44,7 +47,10 @@ const Dashboard = () => {
     const fetchPriorities = async () => {
       try {
         const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-        if (!token) return;
+        if (!token) {
+          navigate("/");
+          return;
+        }
 
         const query = `
           query GetAllNivelesPrioridad {
@@ -64,6 +70,13 @@ const Dashboard = () => {
           body: JSON.stringify({ query }),
         });
 
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("jwt_token");
+          sessionStorage.removeItem("jwt_token");
+          navigate("/", { state: { sessionExpired: true } });
+          return;
+        }
+
         const result = await response.json();
         if (result.data?.nivelesPrioridad) {
           setPriorities(result.data.nivelesPrioridad);
@@ -73,8 +86,71 @@ const Dashboard = () => {
       }
     };
 
+    const fetchAlerts = async () => {
+      try {
+        const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+        if (!token) {
+          navigate("/");
+          return;
+        }
+
+        const query = `
+          query GetAllTipoAlertas {
+            tipoAlertas {
+              id
+              nombre
+              descripcion
+              nivelPrioridad {
+                id
+                nombre
+              }
+              tipoEncargado
+            }
+          }
+        `;
+
+        const response = await fetch(`${API_URL}/alerts/graphql`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("jwt_token");
+          sessionStorage.removeItem("jwt_token");
+          navigate("/", { state: { sessionExpired: true } });
+          return;
+        }
+
+        const result = await response.json();
+        if (result.data?.tipoAlertas) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mappedAlerts = result.data.tipoAlertas.map((item: any) => ({
+            id: item.id.toString(),
+            name: item.nombre,
+            description: item.descripcion,
+            priority: item.nivelPrioridad.nombre, // Usamos el nombre directamente
+            priorityId: item.nivelPrioridad.id,
+            area: item.tipoEncargado,
+          }));
+          setAlerts(mappedAlerts);
+        }
+      } catch (error) {
+        console.error("Error fetching alerts:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las alertas",
+          variant: "destructive",
+        });
+      }
+    };
+
     fetchPriorities();
-  }, []);
+    fetchAlerts();
+  }, [navigate, toast]);
 
   const getPriorityId = (priority: string): number => {
     // Si la prioridad es un número (ID), devolverlo
@@ -82,135 +158,227 @@ const Dashboard = () => {
     if (!isNaN(id)) return id;
     
     // Fallback para compatibilidad
-    switch (priority) {
-      case "critical": return 1;
-      case "high": return 5;
-      case "medium": return 6;
-      default: return 7;
-    }
+    const p = priority.toLowerCase();
+    if (p.includes("alta") || p === "high") return 3;
+    if (p.includes("media") || p === "medium") return 2;
+    if (p.includes("baja") || p === "low") return 1;
+    return 1;
   };
 
-const handleAddAlert = async () => {
-  if (!newAlert.name || !newAlert.description || !newAlert.priority || !newAlert.area) {
-    toast({
-      title: "Error",
-      description: "Por favor completa todos los campos",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  try {
-    const token =
-      localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-
-    if (!token) {
+  const handleSaveAlert = async () => {
+    if (!newAlert.name || !newAlert.description || !newAlert.priority || !newAlert.area) {
       toast({
         title: "Error",
-        description: "No se encontró el token de autenticación. Inicia sesión nuevamente.",
+        description: "Por favor completa todos los campos",
         variant: "destructive",
       });
       return;
     }
 
-    const mutation = `
-      mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {
-        createTipoAlerta(input: $input) {
-          id
-          nombre
-          descripcion
-          nivelPrioridad {
-            id
-            nombre
-          }
-          tipoEncargado
-        }
+    try {
+      const token =
+        localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No se encontró el token de autenticación. Inicia sesión nuevamente.",
+          variant: "destructive",
+        });
+        return;
       }
-    `;
 
-    const variables = {
-      input: {
-        nombre: newAlert.name,
-        descripcion: newAlert.description,
-        nivelPrioridadId: getPriorityId(newAlert.priority),
-        tipoEncargado: newAlert.area,
-      },
-    };
+      let mutation;
+      let variables;
 
-    const response = await fetch(`${API_URL}/alerts/graphql`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ query: mutation, variables }),
-    });
+      if (editingId) {
+        mutation = `
+          mutation UpdateTipoAlerta($id: Int!, $input: TipoAlertaUpdateInput!) {
+            updateTipoAlerta(id: $id, input: $input) {
+              id
+              nombre
+              descripcion
+              nivelPrioridad {
+                id
+                nombre
+              }
+              tipoEncargado
+            }
+          }
+        `;
+        variables = {
+          id: parseInt(editingId),
+          input: {
+            nombre: newAlert.name,
+            descripcion: newAlert.description,
+            nivelPrioridadId: getPriorityId(newAlert.priority),
+            tipoEncargado: newAlert.area,
+          },
+        };
+      } else {
+        mutation = `
+          mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {
+            createTipoAlerta(input: $input) {
+              id
+              nombre
+              descripcion
+              nivelPrioridad {
+                id
+                nombre
+              }
+              tipoEncargado
+            }
+          }
+        `;
+        variables = {
+          input: {
+            nombre: newAlert.name,
+            descripcion: newAlert.description,
+            nivelPrioridadId: getPriorityId(newAlert.priority),
+            tipoEncargado: newAlert.area,
+          },
+        };
+      }
 
-    const result = await response.json();
+      const response = await fetch(`${API_URL}/alerts/graphql`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ query: mutation, variables }),
+      });
 
-    if (result.errors) {
-      throw new Error(result.errors[0]?.message || "Error al crear la alerta");
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("jwt_token");
+        sessionStorage.removeItem("jwt_token");
+        navigate("/", { state: { sessionExpired: true } });
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.errors) {
+        throw new Error(result.errors[0]?.message || "Error al guardar la alerta");
+      }
+
+      const saved = editingId ? result.data.updateTipoAlerta : result.data.createTipoAlerta;
+
+      const alert: Alert = {
+        id: saved.id.toString(),
+        name: saved.nombre,
+        description: saved.descripcion,
+        priority: saved.nivelPrioridad.nombre,
+        priorityId: saved.nivelPrioridad.id,
+        area: saved.tipoEncargado,
+      };
+
+      if (editingId) {
+        setAlerts((prev) => prev.map((a) => (a.id === editingId ? alert : a)));
+        toast({
+          title: "Alerta actualizada",
+          description: `Se ha actualizado la alerta "${alert.name}" exitosamente`,
+        });
+      } else {
+        setAlerts((prev) => [...prev, alert]);
+        toast({
+          title: "Alerta creada",
+          description: `Se ha creado la alerta "${alert.name}" exitosamente`,
+        });
+      }
+
+      setNewAlert({ name: "", description: "", priority: "", area: "" });
+      setEditingId(null);
+      setIsDialogOpen(false);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo guardar la alerta";
+      toast({
+        title: "Error al guardar la alerta",
+        description: message,
+        variant: "destructive",
+      });
     }
-
-    const created = result.data.createTipoAlerta;
-
-    const alert: Alert = {
-      id: created.id.toString(),
-      name: created.nombre,
-      description: created.descripcion,
-      priority:
-        created.nivelPrioridad.nombre === "Crítica"
-          ? "critical"
-          : created.nivelPrioridad.nombre === "Alta"
-          ? "high"
-          : "medium",
-      area: created.tipoEncargado,
-    };
-
-    setAlerts((prev) => [...prev, alert]);
-    setNewAlert({ name: "", description: "", priority: "", area: "" });
-    setIsDialogOpen(false);
-
-    toast({
-      title: "Alerta creada",
-      description: `Se ha creado la alerta "${alert.name}" exitosamente`,
-    });
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "No se pudo crear la alerta";
-    toast({
-      title: "Error al crear la alerta",
-      description: message,
-      variant: "destructive",
-    });
-  }
-};
-
-
-  const handleDeleteAlert = (id: string) => {
-    setAlerts(alerts.filter(alert => alert.id !== id));
-    toast({
-      title: "Alerta eliminada",
-      description: "La alerta ha sido eliminada del sistema"
-    });
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "critical": return "bg-priority-critical text-white";
-      case "high": return "bg-priority-high text-white";
-      case "medium": return "bg-priority-medium text-white";
-      default: return "bg-muted";
+  const handleEditAlert = (alert: Alert) => {
+    // Buscar el ID de la prioridad basándose en el nombre
+    const priorityObj = priorities.find(p => p.nombre === alert.priority);
+    const priorityId = priorityObj ? priorityObj.id.toString() : "";
+
+    setNewAlert({
+      name: alert.name,
+      description: alert.description,
+      priority: priorityId,
+      area: alert.area,
+    });
+    setEditingId(alert.id);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteAlert = async (id: string) => {
+    try {
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+      if (!token) {
+        navigate("/");
+        return;
+      }
+
+      const mutation = `
+        mutation DeleteTipoAlerta($id: Int!) {
+          deleteTipoAlerta(id: $id)
+        }
+      `;
+
+      const response = await fetch(`${API_URL}/alerts/graphql`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ query: mutation, variables: { id: parseInt(id) } }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("jwt_token");
+        sessionStorage.removeItem("jwt_token");
+        navigate("/", { state: { sessionExpired: true } });
+        return;
+      }
+
+      const result = await response.json();
+      if (result.errors) {
+        throw new Error(result.errors[0]?.message || "Error al eliminar la alerta");
+      }
+
+      if (result.data.deleteTipoAlerta) {
+        setAlerts(alerts.filter((alert) => alert.id !== id));
+        toast({
+          title: "Alerta eliminada",
+          description: "La alerta ha sido eliminada del sistema",
+        });
+      } else {
+        throw new Error("No se pudo eliminar la alerta");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error al eliminar la alerta";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };  const getPriorityColor = (priorityId: number) => {
+    switch (priorityId) {
+      case 3: return "bg-priority-critical text-white";
+      case 2: return "bg-priority-medium text-white";
+      case 1: return "bg-aqua-green text-white";
+      default: return "bg-muted text-muted-foreground";
     }
   };
 
   const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case "critical": return "Crítica";
-      case "high": return "Alta";
-      case "medium": return "Media";
-      default: return priority;
-    }
+    return priority;
   };
 
   return (
@@ -265,7 +433,13 @@ const handleAddAlert = async () => {
               <h1 className="text-3xl font-bold text-foreground">Alertas Activas</h1>
             </div>
             
-            <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <AlertDialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) {
+                setEditingId(null);
+                setNewAlert({ name: "", description: "", priority: "", area: "" });
+              }
+            }}>
               <AlertDialogTrigger asChild>
                 <Button 
                   variant="outline" 
@@ -278,7 +452,7 @@ const handleAddAlert = async () => {
               
               <AlertDialogContent className="max-w-md">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Agregar Nueva Alerta</AlertDialogTitle>
+                  <AlertDialogTitle>{editingId ? "Editar Alerta" : "Agregar Nueva Alerta"}</AlertDialogTitle>
                 </AlertDialogHeader>
                 
                 <div className="space-y-4">
@@ -342,12 +516,16 @@ const handleAddAlert = async () => {
                   </div>
                   
                   <div className="flex space-x-2 pt-4">
-                    <Button onClick={handleAddAlert} className="flex-1">
-                      Agregar Alerta
+                    <Button onClick={handleSaveAlert} className="flex-1">
+                      {editingId ? "Guardar Cambios" : "Agregar Alerta"}
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => setIsDialogOpen(false)}
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        setEditingId(null);
+                        setNewAlert({ name: "", description: "", priority: "", area: "" });
+                      }}
                       className="flex-1"
                     >
                       Cancelar
@@ -375,19 +553,24 @@ const handleAddAlert = async () => {
                   {alerts.map((alert, index) => (
                     <TableRow 
                       key={alert.id} 
-                      className={index % 2 === 1 ? "bg-light-aqua" : "bg-white"}
+                      className={`${index % 2 === 1 ? "bg-light-aqua" : "bg-white"}`}
                     >
                       <TableCell className="font-medium">{alert.name}</TableCell>
                       <TableCell>{alert.description}</TableCell>
                       <TableCell>
-                        <Badge className={getPriorityColor(alert.priority)}>
-                          {getPriorityText(alert.priority)}
+                        <Badge className={getPriorityColor(alert.priorityId)}>
+                          {alert.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>{alert.area}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-primary hover:bg-primary/10"
+                            onClick={() => handleEditAlert(alert)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button 

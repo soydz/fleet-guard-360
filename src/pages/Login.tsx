@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,20 @@ const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (location.state?.sessionExpired) {
+      toast({
+        title: "Sesión expirada",
+        description: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
+        variant: "destructive",
+      });
+      // Limpiar el estado para que no se muestre de nuevo si se recarga
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
