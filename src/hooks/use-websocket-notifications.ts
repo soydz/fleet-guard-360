@@ -31,7 +31,8 @@ export const useWebSocketNotifications = ({
 
   const connect = () => {
     try {
-      const socket = new SockJS("http://fleetguard-api.ddns.net/notifications/ws-alerts");
+      // Usar ruta relativa para que funcione con el proxy de Vercel
+      const socket = new SockJS("/notifications/ws-alerts");
       const stompClient = Stomp.over(socket);
 
       // Desactivar logs de debug (opcional)

@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "http://fleetguard-api.ddns.net/:path*"
+    },
+    {
+      "source": "/notifications/:path*",
+      "destination": "http://fleetguard-api.ddns.net/notifications/:path*"
     }
   ]
 }
