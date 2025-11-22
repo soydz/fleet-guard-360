@@ -19,6 +19,12 @@ export default defineConfig(({ mode }) => ({
           });
         },
       },
+      "/notifications": {
+        target: "http://fleetguard-api.ddns.net",
+        changeOrigin: true,
+        ws: true, // Importante: habilita el proxy de WebSocket
+        secure: false,
+      },
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
