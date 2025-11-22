@@ -2,23 +2,51 @@ import { Button } from "@/components/ui/button";
 import { Download, BarChart3 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { useToast } from "@/hooks/use-toast";
+import { useGraphQL } from "@/hooks/use-graphql";
 import { useState } from "react";
 
 const Estadisticas = () => {
   const { toast } = useToast();
+  const { fetchGraphQL } = useGraphQL();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportCSV = async () => {
     setIsExporting(true);
     try {
-      // TODO: Implementar endpoint de descarga
       toast({
-        title: "Exportando datos",
-        description: "La descarga comenzará en breve...",
+        title: "Preparando exportación",
+        description: "Generando archivo CSV...",
       });
-      
-      // Aquí irá la llamada al endpoint de exportación
-      // const response = await fetch('/api/export-csv', ...);
+
+      // Obtener la URL de descarga
+      const query = `
+        query {
+          exportAlertsCsvUrl
+        }
+      `;
+
+      const result = await fetchGraphQL<{ exportAlertsCsvUrl: string }>(
+        "/panel/graphql",
+        query
+      );
+
+      const downloadUrl = result.exportAlertsCsvUrl;
+
+      console.log("URL de descarga:", downloadUrl);
+
+      // Opción 1: Descargar directamente usando un link (más simple)
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `alertas_${new Date().toISOString().split('T')[0]}.csv`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Exportación exitosa",
+        description: "El archivo CSV ha sido descargado correctamente",
+      });
       
     } catch (error) {
       console.error("Error exportando CSV:", error);

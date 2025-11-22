@@ -1,12 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Bell, History, BarChart3 } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 export const Sidebar = () => {
   const location = useLocation();
 
   return (
     <div className="fixed left-0 top-0 h-screen w-[240px] bg-[#0A2846] flex flex-col pt-8 z-10">
+      {/* Campana de notificaciones */}
+      <div className="px-4 mb-4 flex justify-end">
+        <NotificationBell />
+      </div>
+
       <div className="flex flex-col space-y-2 px-4">
         <Button
           variant="ghost"
