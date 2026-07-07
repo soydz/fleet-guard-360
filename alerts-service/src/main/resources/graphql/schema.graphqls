@@ -1,0 +1,62 @@
+scalar Long
+
+enum TipoEncargado {
+  CONDUCTOR
+  MECANICO
+  SOPORTE_TECNICO
+  OPERADOR_LOGISTICA
+  SEGURIDAD
+}
+
+type TipoAlerta {
+  id: Int!
+  nombre: String!
+  descripcion: String
+  nivelPrioridad: NivelPrioridad!
+  tipoEncargado: TipoEncargado!
+}
+
+type NivelPrioridad {
+  id: Int!
+  nombre: String!
+}
+
+input TipoAlertaCreateInput {
+  nombre: String!
+  descripcion: String
+  nivelPrioridadId: Int!
+  tipoEncargado: TipoEncargado!
+}
+
+input TipoAlertaUpdateInput {
+  nombre: String
+  descripcion: String
+  nivelPrioridadId: Int
+  tipoEncargado: TipoEncargado
+}
+
+input NivelPrioridadCreateInput {
+  nombre: String!
+}
+
+input NivelPrioridadUpdateInput {
+  nombre: String
+}
+
+type Query {
+  tipoAlerta(id: Int!): TipoAlerta!
+  tipoAlertas: [TipoAlerta!]!
+
+  nivelPrioridad(id: Int!): NivelPrioridad!
+  nivelesPrioridad: [NivelPrioridad!]!
+}
+
+type Mutation {
+  createTipoAlerta(input: TipoAlertaCreateInput!): TipoAlerta!
+  updateTipoAlerta(id: Int!, input: TipoAlertaUpdateInput!): TipoAlerta!
+  deleteTipoAlerta(id: Int!): Boolean!
+
+  createNivelPrioridad(input: NivelPrioridadCreateInput!): NivelPrioridad!
+  updateNivelPrioridad(id: Int!, input: NivelPrioridadUpdateInput!): NivelPrioridad!
+  deleteNivelPrioridad(id: Int!): Boolean!
+}
