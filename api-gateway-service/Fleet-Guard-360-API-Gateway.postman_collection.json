@@ -1,0 +1,1031 @@
+{
+	"info": {
+		"_postman_id": "9b216d02-b0a7-4c87-8e6f-168cbef0920c",
+		"name": "Fleet Guard 360 - API Gateway Collection",
+		"description": "Colección completa para la API Gateway de Fleet Guard 360. Incluye autenticación y acceso a microservicios.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37574367"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson.jwt) {",
+									"        pm.collectionVariables.set('jwt_token', responseJson.jwt);",
+									"        console.log('JWT Token saved:', responseJson.jwt);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/auth/login",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autenticación de usuario para obtener JWT token"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación - No requieren token JWT"
+		},
+		{
+			"name": "🏷️ Nivel Prioridad",
+			"item": [
+				{
+					"name": "Query - Obtener Nivel Prioridad por ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetNivelPrioridadById($id: Int!) {\\n  nivelPrioridad(id: $id) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query - Obtener Todos los Niveles de Prioridad",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetAllNivelesPrioridad {\\n  nivelesPrioridad {\\n    id\\n    nombre\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Nivel Prioridad Crítica",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateNivelPrioridad($input: NivelPrioridadCreateInput!) {\\n  createNivelPrioridad(input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Crítica\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Nivel Prioridad Alta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateNivelPrioridad($input: NivelPrioridadCreateInput!) {\\n  createNivelPrioridad(input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Alta\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Nivel Prioridad Media",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateNivelPrioridad($input: NivelPrioridadCreateInput!) {\\n  createNivelPrioridad(input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Media\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Nivel Prioridad Baja",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateNivelPrioridad($input: NivelPrioridadCreateInput!) {\\n  createNivelPrioridad(input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Baja\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Actualizar Nivel Prioridad",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation UpdateNivelPrioridad($id: Int!, $input: NivelPrioridadUpdateInput!) {\\n  updateNivelPrioridad(id: $id, input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 1,\n    \"input\": {\n      \"nombre\": \"Crítica Actualizada\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Eliminar Nivel Prioridad",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation DeleteNivelPrioridad($id: Int!) {\\n  deleteNivelPrioridad(id: $id)\\n}\",\n  \"variables\": {\n    \"id\": 4\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🚨 Tipo Alerta - Configuración Completa",
+			"item": [
+				{
+					"name": "Query - Obtener Tipo Alerta por ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetTipoAlertaById($id: Int!) {\\n  tipoAlerta(id: $id) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query - Obtener Todos los Tipos de Alerta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetAllTipoAlertas {\\n  tipoAlertas {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Falla Motor (Mecánico - Crítica)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Falla de Motor\",\n      \"descripcion\": \"Falla crítica del sistema de motor que requiere atención inmediata del mecánico especializado\",\n      \"nivelPrioridadId\": 1,\n      \"tipoEncargado\": \"MECANICO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Exceso Velocidad (Conductor - Alta)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Exceso de Velocidad\",\n      \"descripcion\": \"El conductor ha superado los límites de velocidad establecidos para la ruta\",\n      \"nivelPrioridadId\": 2,\n      \"tipoEncargado\": \"CONDUCTOR\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Retraso Entrega (Logística - Media)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Retraso en Entrega\",\n      \"descripcion\": \"El vehículo presenta retrasos significativos en la ruta programada que afectan las entregas\",\n      \"nivelPrioridadId\": 3,\n      \"tipoEncargado\": \"OPERADOR_LOGISTICA\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Falla Sistema (Soporte - Crítica)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Falla Sistema Comunicación\",\n      \"descripcion\": \"Problemas críticos de conectividad o comunicación con el sistema central de monitoreo\",\n      \"nivelPrioridadId\": 1,\n      \"tipoEncargado\": \"SOPORTE_TECNICO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Zona Restringida (Seguridad - Alta)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Acceso Zona Restringida\",\n      \"descripcion\": \"El vehículo ha ingresado a una zona no autorizada o de acceso restringido\",\n      \"nivelPrioridadId\": 2,\n      \"tipoEncargado\": \"SEGURIDAD\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Crear Alerta Mantenimiento (Mecánico - Media)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Mantenimiento Preventivo\",\n      \"descripcion\": \"El vehículo requiere mantenimiento preventivo programado según intervalos establecidos\",\n      \"nivelPrioridadId\": 3,\n      \"tipoEncargado\": \"MECANICO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Actualizar Tipo Alerta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation UpdateTipoAlerta($id: Int!, $input: TipoAlertaUpdateInput!) {\\n  updateTipoAlerta(id: $id, input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 1,\n    \"input\": {\n      \"descripcion\": \"Falla crítica del sistema de motor - Descripción actualizada con mayor detalle\",\n      \"nivelPrioridadId\": 1\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Cambiar Encargado de Alerta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation UpdateTipoAlerta($id: Int!, $input: TipoAlertaUpdateInput!) {\\n  updateTipoAlerta(id: $id, input: $input) {\\n    id\\n    nombre\\n    tipoEncargado\\n    nivelPrioridad {\\n      nombre\\n    }\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 2,\n    \"input\": {\n      \"tipoEncargado\": \"SEGURIDAD\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mutation - Eliminar Tipo Alerta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation DeleteTipoAlerta($id: Int!) {\\n  deleteTipoAlerta(id: $id)\\n}\",\n  \"variables\": {\n    \"id\": 6\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧪 Casos de Prueba y Validaciones",
+			"item": [
+				{
+					"name": "Error - Crear Tipo Alerta con Nivel Inexistente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Prueba Error\",\n      \"descripcion\": \"Esta prueba debe fallar por nivelPrioridadId inexistente\",\n      \"nivelPrioridadId\": 999,\n      \"tipoEncargado\": \"MECANICO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error - Crear Tipo Alerta Duplicado",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Falla de Motor\",\n      \"descripcion\": \"Este nombre ya debe existir\",\n      \"nivelPrioridadId\": 1,\n      \"tipoEncargado\": \"MECANICO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error - Buscar Tipo Alerta Inexistente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetTipoAlertaById($id: Int!) {\\n  tipoAlerta(id: $id) {\\n    id\\n    nombre\\n    descripcion\\n  }\\n}\",\n  \"variables\": {\n    \"id\": 999\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error - Crear Nivel Prioridad Duplicado",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateNivelPrioridad($input: NivelPrioridadCreateInput!) {\\n  createNivelPrioridad(input: $input) {\\n    id\\n    nombre\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Crítica\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validación - Tipo Encargado Inválido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateTipoAlerta($input: TipoAlertaCreateInput!) {\\n  createTipoAlerta(input: $input) {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"nombre\": \"Prueba Enum Inválido\",\n      \"descripcion\": \"Esta prueba debe fallar por enum inválido\",\n      \"nivelPrioridadId\": 1,\n      \"tipoEncargado\": \"ADMINISTRADOR\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error - Acceso sin Token JWT",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetAllNivelesPrioridad {\\n  nivelesPrioridad {\\n    id\\n    nombre\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						},
+						"description": "Esta prueba debe fallar con error de autenticación"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Consultas Completas y Reportes",
+			"item": [
+				{
+					"name": "Query - Reporte Completo del Sistema",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query ReporteCompletoSistema {\\n  nivelesPrioridad {\\n    id\\n    nombre\\n  }\\n  \\n  tipoAlertas {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      id\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query - Solo Alertas de Prioridad Crítica",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query AlertasPrioridadCritica {\\n  tipoAlertas {\\n    id\\n    nombre\\n    descripcion\\n    nivelPrioridad {\\n      nombre\\n    }\\n    tipoEncargado\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query - Alertas por Tipo de Encargado",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query AlertasPorEncargado {\\n  tipoAlertas {\\n    id\\n    nombre\\n    tipoEncargado\\n    nivelPrioridad {\\n      nombre\\n    }\\n  }\\n}\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/alerts/graphql",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"alerts",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"// Auto-incluir Authorization header si existe jwt_token",
+					"const token = pm.collectionVariables.get('jwt_token');",
+					"if (token && !pm.request.headers.has('Authorization')) {",
+					"    pm.request.headers.add({",
+					"        key: 'Authorization',",
+					"        value: 'Bearer ' + token",
+					"    });",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"// Validar respuestas y mostrar información útil",
+					"if (pm.response.code === 401) {",
+					"    console.log('🚫 Error de autenticación - Verifica tu JWT token');",
+					"} else if (pm.response.code === 403) {",
+					"    console.log('🚫 Acceso denegado - Verifica permisos');",
+					"} else if (pm.response.code >= 400) {",
+					"    console.log('❌ Error en la petición:', pm.response.code);",
+					"} else if (pm.response.code === 200) {",
+					"    console.log('✅ Petición exitosa');",
+					"}",
+					"",
+					"// Mostrar tiempo de respuesta",
+					"console.log('⏱️ Tiempo de respuesta:', pm.response.responseTime + 'ms');"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "gateway_url",
+			"value": "http://localhost:8085",
+			"type": "string",
+			"description": "URL del API Gateway"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT Token obtenido del login (se auto-completa)"
+		},
+		{
+			"key": "user_email",
+			"value": "user@example.com",
+			"type": "string",
+			"description": "Email del usuario para login"
+		},
+		{
+			"key": "user_password",
+			"value": "password123",
+			"type": "string",
+			"description": "Password del usuario para login"
+		}
+	]
+}
+

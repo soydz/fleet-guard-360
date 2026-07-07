@@ -1,0 +1,14 @@
+type Query {
+    _dummy: String
+}
+
+type Mutation {
+    login(email: String!, password: String!): AuthRes
+}
+
+type AuthRes {
+    email: String
+    message: String
+    jwt: String
+    status: Boolean
+}

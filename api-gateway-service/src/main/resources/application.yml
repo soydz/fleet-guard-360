@@ -1,0 +1,59 @@
+server:
+  port: "${SPRING_PORT}"
+spring:
+  config:
+        import: "optional:file:.env[.properties]"
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: "auth-service"
+              uri: "${AUTH_SERVICE_URI}"
+              predicates:
+                - Path=/auth/**
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /api/v1/auth/${segment}
+            - id: "alerts-service"
+              uri: "${ALERTS_SERVICE_URI}"
+              predicates:
+                - Path=/alerts/graphql/**
+              filters:
+                - AuthenticationFilter
+                - RewritePath=/alerts/(?<segment>.*), /${segment}
+            - id: "notifications-service"
+              uri: "http://${NOTIFICATIONS_SERVICE_URI}"
+              predicates:
+                - Path=/notifications/**
+              filters:
+                - RewritePath=/notifications/(?<segment>.*), /${segment}
+                - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_FIRST
+            - id: panel-export
+              uri: "${PANEL_SERVICE_URI}"
+              predicates:
+                - Path=/export/alerts.csv
+              filters:
+                - RewritePath=/(?<segment>.*), /api/v1/${segment}
+            - id: "panel-service"
+              uri: "${PANEL_SERVICE_URI}"
+              predicates:
+                - Path=/panel/graphql/**
+              filters:
+                - RewritePath=/panel/(?<segment>.*), /${segment}
+                - AuthenticationFilter
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - "http://127.0.0.1:5500"
+                  - "http://localhost:3000"
+                  - "http://localhost:4200"
+                  - "https://cf2025frontend.vercel.app"
+                allowed-methods: "*"
+                allowed-headers: "*"
+                allow-credentials: true
+            add-to-simple-url-handler-mapping: true
+jwt:
+  key: "${SECURITY_JWT_KEY_PRIVATE}"
