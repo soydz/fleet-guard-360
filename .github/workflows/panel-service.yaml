@@ -1,0 +1,19 @@
+name: Panel Service CI
+
+on:
+  push:
+    tags:
+      - "panel-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build-push-template.yaml
+    with:
+      service-name: panel-service
+      context: ./panel-service
+    secrets: inherit
