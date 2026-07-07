@@ -1,0 +1,16 @@
+server:
+  port: "${AUTH_PORT}"
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+  datasource:
+    url: "${SPRING_DATASOURCE_URL}"
+    username: "${SPRING_DATASOURCE_USERNAME}"
+    password: "${SPRING_DATASOURCE_PASSWORD}"
+  jpa:
+    hibernate:
+      ddl-auto: "update"
+jwt:
+  key: "${SECURITY_JWT_KEY_PRIVATE}"
+  user: "${SECURITY_JWT_USER_GENERATOR}"
+  expire: "${SECURITY_JWT_EXPIRE}"
