@@ -1,0 +1,19 @@
+name: Alerts Service CI
+
+on:
+  push:
+    tags:
+      - "alerts-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build-push-template.yaml
+    with:
+      service-name: alerts-service
+      context: ./alerts-service
+    secrets: inherit
