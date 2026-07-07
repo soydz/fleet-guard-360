@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    queue:
+      alert:
+        created:
+          name: alert_queue_test
+    exchange:
+      name: alert_exchange_test
+    routing:
+      alert:
+        created:
+          key: alert_key_test
+
+email:
+  SENDER: test@fg360.com
+  password: test
+frontend:
+  url: http://localhost:3000

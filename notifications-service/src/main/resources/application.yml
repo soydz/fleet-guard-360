@@ -1,0 +1,29 @@
+server:
+  port: "${Notification_PORT}"
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+  rabbitmq:
+    addresses: "${RABBITMQ_ADDRESSES}"
+    host: "${RABBITMQ_HOST}"
+    port: "${RABBITMQ_PORT}"
+    username: "${RABBITMQ_USERNAME}"
+    password: "${RABBITMQ_PASSWORD}"
+    queue:
+      alert:
+        created:
+          name: "${RABBITMQ_QUEUE_ALERT_CREATED_NAME}"
+    exchange:
+      name: "${RABBITMQ_EXCHANGE_NAME}"
+    routing:
+      alert:
+        created:
+          key: "${RABBITMQ_ALERT_CREATED_ROUTING_KEY}"
+email:
+  sender: "${EMAIL_SENDER}"
+  username: "${EMAIL_USERNAME}"
+  password: "${EMAIL_PASSWORD}"
+  host: "${EMAIL_HOST:smtp.gmail.com}"
+  port: "${EMAIL_PORT:465}"
+frontend:
+  url: "${URL_FRONTEND}"

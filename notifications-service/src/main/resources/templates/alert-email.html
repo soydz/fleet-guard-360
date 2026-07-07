@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <meta lang="es">
+        <title>Alerta del Sistema</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f6f8fa;
+                padding: 20px;
+                color: #333;
+            }
+
+            .container {
+                background-color: #ffffff;
+                max-width: 600px;
+                margin: auto;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                padding: 20px;
+            }
+
+            .header {
+                border-bottom: 2px solid #007BFF;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+
+            .header h2 {
+                margin: 0;
+                color: #007BFF;
+            }
+
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .data-table td {
+                padding: 10px;
+                vertical-align: top;
+            }
+
+            .data-table td.label {
+                font-weight: bold;
+                width: 40%;
+                color: #555;
+                background-color: #f0f0f0;
+            }
+
+            .footer {
+                margin-top: 30px;
+                font-size: 12px;
+                color: #999999;
+                text-align: center;
+            }
+
+            .p-gray {
+                font: 12px;
+                color: #999999;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>🚨 Alerta del Sistema</h2>
+                <p>Se ha generado una nueva alerta. A continuación, los detalles:</p>
+            </div>
+
+            <table class="data-table">
+                <tr>
+                    <td class="label">Tipo de alerta:</td>
+                    <td th:text="${tipoAlerta}">Muestra de tipo</td>
+                </tr>
+                <tr>
+                    <td class="label">Responsable asignado:</td>
+                    <td th:text="${responsable}">Nombre del responsable</td>
+                </tr>
+                <tr>
+                    <td class="label">Unidad que generó la alerta:</td>
+                    <td th:text="${unidad}">Nombre de la unidad</td>
+                </tr>
+                <tr>
+                    <td class="label">Fecha y hora de generación:</td>
+                    <td th:text="${fechaHora}">2025-10-18 14:30</td>
+                </tr>
+            </table>
+
+            <p class="p-gray">Este es un mensaje automático, por favor no responder.</p>
+
+            <div class="footer">
+                © 2025 Fleet Guard 360
+            </div>
+        </div>
+    </body>
+</html>
