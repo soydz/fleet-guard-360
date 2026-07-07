@@ -1,0 +1,19 @@
+name: Frontend CI
+
+on:
+  push:
+    tags:
+      - "frontend-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build-push-template.yaml
+    with:
+      service-name: frontend
+      constext: ./frontend
+    secrets: inherit
