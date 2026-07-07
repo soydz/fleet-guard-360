@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   call-build:
-    uses: ./github/workflows/build-push-template.yaml
+    uses: ./.github/workflows/build-push-template.yaml
     with:
       service-name: notifications-service
       context: ./notifications-service
