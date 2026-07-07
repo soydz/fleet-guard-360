@@ -1,0 +1,19 @@
+name: Api Gateway Service CI
+
+on:
+  push:
+    tags:
+      - "api-gateway-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build-push-template.yaml
+    with:
+      service-name: api-gateway-service
+      context: ./api-gateway-service
+    secrets: inherit
