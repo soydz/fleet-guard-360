@@ -3,7 +3,7 @@ name: Api Gateway Service CI
 on:
   push:
     tags:
-      - "api-gateway-v*.*.*"
+      - "apiGateway-v*.*.*"
   workflow_dispatch:
 
 permissions:
@@ -14,6 +14,6 @@ jobs:
   call-build:
     uses: ./.github/workflows/build-push-template.yaml
     with:
-      service-name: api-gateway-service
-      context: ./api-gateway-service
+      service-name: apiGateway-service
+      context: ./apiGateway-service
     secrets: inherit
