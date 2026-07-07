@@ -15,5 +15,5 @@ jobs:
     uses: ./.github/workflows/build-push-template.yaml
     with:
       service-name: frontend
-      constext: ./frontend
+      context: ./frontend
     secrets: inherit
