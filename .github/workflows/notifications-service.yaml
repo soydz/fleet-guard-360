@@ -1,0 +1,19 @@
+name: Notifications Service CI
+
+on:
+  push:
+    tags:
+      - "notifications-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  call-build:
+    uses: ./github/workflows/build-push-template.yaml
+    with:
+      service-name: notifications-service
+      context: ./notifications-service
+    secrets: inherit
