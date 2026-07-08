@@ -1,0 +1,137 @@
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+
+services:
+  db-auth:
+    image: postgres:15
+    container_name: auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 73
+      POSTGRES_DB: db-auth
+    volumes:
+      - data-auth:/var/lib/postgresql/data
+    networks:
+      - backend-net
+
+  db-alerts:
+    image: postgres:15
+    container_name: alerts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 73
+      POSTGRES_DB: db-alerts
+    volumes:
+      - data-alerts:/var/lib/postgresql/data
+    networks:
+      - backend-net
+
+  db-panel:
+    image: postgres:15
+    container_name: panel-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 73
+      POSTGRES_DB: db-panel
+    volumes:
+      - data-panel:/var/lib/postgresql/data
+    networks:
+      - backend-net
+
+  auth:
+    image: ghcr.io/soydz/fleet-guard-360/auth-service:latest
+    container_name: auth-service
+    restart: unless-stopped
+    env_file:
+      - ./auth-service/.env
+    depends_on:
+      - db-auth
+    networks:
+      - backend-net
+
+  alerts:
+    image: ghcr.io/soydz/fleet-guard-360/alerts-service:latest
+    container_name: alerts-service
+    restart: unless-stopped
+    env_file:
+      - ./alerts-service/.env
+    depends_on:
+      - db-alerts
+    networks:
+      - backend-net
+
+  panel:
+    image: ghcr.io/soydz/fleet-guard-360/panel-service:latest
+    container_name: panel-service
+    restart: unless-stopped
+    env_file:
+      - ./panel-service/.env
+    depends_on:
+      - db-panel
+      - rabbitmq
+    networks:
+      - backend-net
+
+  notifications:
+    image: ghcr.io/soydz/fleet-guard-360/notifications-service:latest
+    container_name: notifications-service
+    restart: unless-stopped
+    env_file:
+      - ./notifications-service/.env
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend-net
+
+  apiGateway:
+    image: ghcr.io/soydz/fleet-guard-360/apigateway-service:latest
+    container_name: apiGateway-service
+    restart: unless-stopped
+    env_file:
+      - ./apiGateway-service/.env
+    depends_on:
+      - auth
+      - alerts
+      - panel
+      - notifications
+    networks:
+      - backend-net
+      - frontend-net
+
+  rabbitmq:
+    image: rabbitmq:4.3.2-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5675:5672"
+      - "15675:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend-net
+
+  frontend:
+    image: ghcr.io/soydz/fleet-guard-360/frontend:latest
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - apiGateway
+    ports:
+      - "3000:80"
+    networks:
+      - frontend-net
+
+volumes:
+  data-auth: {}
+  data-alerts: {}
+  data-panel: {}
+  rabbitmq-data: {}
