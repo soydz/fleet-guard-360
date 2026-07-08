@@ -46,7 +46,7 @@ spring:
           globalcors:
             cors-configurations:
               "[/**]":
-                allowed-origins-patterns: "*"
+                allowed-origin-patterns: "*"
                 allowed-methods: "*"
                 allowed-headers: "*"
             add-to-simple-url-handler-mapping: true
