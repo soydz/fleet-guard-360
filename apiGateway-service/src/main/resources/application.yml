@@ -2,7 +2,7 @@ server:
   port: "${SPRING_PORT}"
 spring:
   config:
-        import: "optional:file:.env[.properties]"
+    import: "optional:file:.env[.properties]"
   application:
     name: api-gateway
   cloud:
@@ -45,15 +45,10 @@ spring:
                 - AuthenticationFilter
           globalcors:
             cors-configurations:
-              '[/**]':
-                allowed-origins:
-                  - "http://127.0.0.1:5500"
-                  - "http://localhost:3000"
-                  - "http://localhost:4200"
-                  - "https://cf2025frontend.vercel.app"
+              "[/**]":
+                allowed-origins-patterns: "*"
                 allowed-methods: "*"
                 allowed-headers: "*"
-                allow-credentials: true
             add-to-simple-url-handler-mapping: true
 jwt:
   key: "${SECURITY_JWT_KEY_PRIVATE}"
