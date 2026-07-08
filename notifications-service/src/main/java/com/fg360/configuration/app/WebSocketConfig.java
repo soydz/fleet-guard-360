@@ -16,7 +16,9 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebSocketConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(
+        WebSocketConfig.class
+    );
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -26,14 +28,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-alerts")
-                .setAllowedOrigins(
-                        "http://127.0.0.1:5500",
-                        "http://localhost:3000",
-                        "http://localhost:4200",
-                        "https://cf2025frontend.vercel.app"
-                )
-                        .withSockJS();
+        registry
+            .addEndpoint("/ws-alerts")
+            .setAllowedOriginPatterns("*")
+            .withSockJS();
 
         //.setAllowedOrigins(url frontend)
 
